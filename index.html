@@ -975,12 +975,12 @@
             }
         }
 
-        window.onload = function() {
-            initCharts();
-            const savedTab = localStorage.getItem('activeTab') || 'stats';
-            switchTab(savedTab);
-            fetchAllCSV();
-        };
+       window.onload = function() {
+    initCharts();
+    // Jika ingin memaksa menu "stats" (Naker) yang selalu tampil pertama kali:
+    switchTab('stats'); 
+    fetchAllCSV();
+};
     </script>
 </body>
 </html>
