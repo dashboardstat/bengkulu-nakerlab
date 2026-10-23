@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Statistik Ketenagakerjaan & Link Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome, Chart.js & PapaParse -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-600 text-white p-2 rounded-xl shadow-md">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight uppercase block sm:hidden">NakerLAB</h1>
+                    <h1 class="font-bold text-lg tracking-tight uppercase hidden sm:block">Statistik Ketenagakerjaan Provinsi Bengkulu</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Dashboard & Link Bio Terintegrasi</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Tab Switcher -->
+                <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-xl flex space-x-1">
+                    <button id="btnStatsTab" onclick="switchTab('stats')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white dark:bg-slate-600 shadow-sm text-brand-600 dark:text-white">Naker</button>
+                    <button id="btnDemografiTab" onclick="switchTab('demografi')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-600 dark:text-slate-300">Penduduk</button>
+                    <button id="btnLinkTab" onclick="switchTab('links')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-600 dark:text-slate-300">Link Hub</button>
+                </div>
+
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition" title="Ganti Tema">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- STATS DASHBOARD TAB -->
+        <div id="statsTab" class="space-y-6">
+            <!-- Filter Bar Utama -->
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">TAHUN UTAMA</label>
+                        <select id="filterYear" onchange="applyFilters()" class="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-brand-500 focus:border-brand-500 font-semibold">
+                            <option value="2025" selected>2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">WILAYAH & GENDER</label>
+                        <select id="filterCategory" onchange="applyFilters()" class="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-brand-500 focus:border-brand-500 font-semibold">
+                            <option value="Total">Total (Keseluruhan)</option>
+                            <option value="Perkotaan">Perkotaan</option>
+                            <option value="Perdesaan">Perdesaan</option>
+                            <option value="Laki-laki">Laki-Laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center">
+                    <span id="syncStatus" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-2 animate-pulse"></span>
+                    <span id="syncText">Memuat Data Google Sheets...</span>
+                </div>
+            </div>
+
+            <!-- KPI Cards Ketenagakerjaan -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Tingkat Pengangguran Terbuka (TPT)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiTPT" class="text-3xl font-bold">-- %</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Tingkat Partisipasi Angkatan Kerja (TPAK)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiTPAK" class="text-3xl font-bold">-- %</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Youth NEET (15-24 Tahun)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiNEET" class="text-3xl font-bold">-- %</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Penduduk Usia Kerja (PUK)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiPUK" class="text-2xl font-bold">-- Jiwa</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <h3 class="font-bold text-base mb-4">Lapangan Usaha Utama</h3>
+                    <div class="relative h-[480px]"><canvas id="sectorChart"></canvas></div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <h3 id="titleStatusCard" class="font-bold text-base mb-2">Status Pekerjaan Utama</h3>
+                    <div class="relative h-[430px] w-full flex items-center justify-center"><canvas id="statusChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Charts Section 2 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <h3 id="titleSheet1" class="font-bold text-base mb-2">Grafik Pendidikan</h3>
+                    <div class="relative h-[320px] w-full flex items-center justify-center"><canvas id="sheet1Chart"></canvas></div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <h3 id="titleSheet2" class="font-bold text-base mb-2">Grafik Jam Kerja</h3>
+                    <div class="relative h-[320px] w-full flex items-center justify-center"><canvas id="sheet2Chart"></canvas></div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <h3 id="titleSheet3" class="font-bold text-base mb-4">Grafik Sheet Baru 3</h3>
+                    <div class="relative h-80"><canvas id="sheet3Chart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Charts Section 3 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 lg:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <h3 id="seriesTitle" class="font-bold text-base">Perkembangan Indikator TPT</h3>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">INDIKATOR:</label>
+                            <select id="seriesIndicatorFilter" onchange="applyFilters()" class="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-xs rounded-lg px-2.5 py-1.5 font-medium focus:ring-brand-500">
+                                <option value="TPT">TPT</option>
+                                <option value="TPAK">TPAK</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relative h-80"><canvas id="seriesChart"></canvas></div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 id="kabKotaTitle" class="font-bold text-base">TPT Menurut Kab/Kota</h3>
+                        <select id="kabKotaIndicatorFilter" onchange="updateKabKotaOnly()" class="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-xs rounded-lg px-2 py-1 font-medium focus:ring-brand-500">
+                            <option value="TPT">TPT</option>
+                            <option value="TPAK">TPAK</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-end space-x-3 text-[11px] mb-2">
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 bg-emerald-500 rounded-sm mr-1"></span> Kab/Kota</span>
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 bg-orange-500 rounded-sm mr-1"></span> Provinsi</span>
+                    </div>
+                    <div class="relative h-72"><canvas id="kabKotaChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEMOGRAFI TAB (MENU PENDUDUK) -->
+        <div id="demografiTab" class="hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">TAHUN PROYEKSI DEMOGRAFI</label>
+                    <select id="filterDemografiYear" onchange="applyDemografiFilters()" class="bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-brand-500 font-semibold">
+                        <script>
+                            for(let y=2025; y<=2050; y++){
+                                document.write(`<option value="${y}">${y}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+                <span class="text-xs text-slate-500 dark:text-slate-400"><i class="fa-solid fa-users mr-1"></i>Proyeksi Penduduk SUPAS 2025</span>
+            </div>
+
+            <!-- KPI Demografi Baris 1 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Jumlah Penduduk Total</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiJumlahDuk" class="text-2xl font-bold">-- Jiwa</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Laju Pertumbuhan Penduduk (LPP)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiLPP" class="text-3xl font-bold">-- %</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Sex Ratio (SR)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiSR" class="text-3xl font-bold">--</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Dependency Ratio (DR)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiDR" class="text-3xl font-bold">--</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Demografi Baris 2 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Lansia (60+)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiLansia60" class="text-3xl font-bold">-- %</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Fertility Rate (TFR)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiTFR" class="text-3xl font-bold">--</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Infant Mortality Rate (IMR)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiIMR" class="text-3xl font-bold">--</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Angka Harapan Hidup (UHH)</p>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <h3 id="kpiUHH" class="text-3xl font-bold">-- Thn</h3>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Series & Piramida Penduduk -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <h3 class="font-bold text-base mb-4">Proyeksi Penduduk (2025-2050)</h3>
+                    <div class="relative h-96"><canvas id="proyeksiSeriesChart"></canvas></div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <h3 class="font-bold text-base mb-4">Piramida Penduduk</h3>
+                    <div class="relative h-96"><canvas id="piramidaChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Grafik Jumlah Penduduk Kabupaten/Kota: Bar Chart & Doughnut Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Bar Chart -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="titlePendudukKabKota" class="font-bold text-base">Jumlah Penduduk Kab/Kota</h3>
+                    </div>
+                    <div class="relative h-96"><canvas id="pendudukKabKotaChart"></canvas></div>
+                </div>
+
+                <!-- Doughnut Chart -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 id="titlePendudukPie" class="font-bold text-base">Distribusi Penduduk Kab/Kota</h3>
+                    </div>
+                    <div class="relative h-[380px] w-full flex items-center justify-center">
+                        <canvas id="pendudukPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LINK HUB TAB -->
+        <div id="linksTab" class="hidden max-w-xl mx-auto space-y-6">
+            <div class="text-center space-y-3">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Avatar" class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white dark:border-slate-700 shadow-lg">
+                <h2 class="text-xl font-bold">Pusat Publikasi & Layanan Data</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Akses cepat portal resmi instansi.</p>
+            </div>
+            <div class="relative">
+                <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                <input type="text" id="searchLinkInput" onkeyup="filterLinks()" placeholder="Cari informasi atau tautan..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm">
+            </div>
+            <div id="linkContainer" class="space-y-3">
+                <a href="https://bengkulu.bps.go.id/id" target="_blank" class="link-card block bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-brand-500 shadow-sm transition-all">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-brand-600 flex items-center justify-center">
+                                <i class="fa-solid fa-globe"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm">Website Resmi BPS Provinsi Bengkulu</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Kunjungi portal data dan informasi resmi instansi</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-400"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
+        <p>&copy; 2026 TJ - Dashboard Ketenagakerjaan & Proyeksi Penduduk Provinsi Bengkulu.</p>
+    </footer>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        const CSV_URLS = {
+            KPI: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=378985991&single=true&output=csv",
+            Sektor_17: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=117401266&single=true&output=csv",
+            Status_17: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=476252069&single=true&output=csv",
+            Serie_10Thn: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=477867278&single=true&output=csv",
+            KabKota_TPT: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=1796504543&single=true&output=csv",
+            KabKota_TPAK: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=636926310&single=true&output=csv",
+            SheetBaru1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=1134331606&single=true&output=csv",
+            SheetBaru2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=318901926&single=true&output=csv",
+            SheetBaru3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=798020110&single=true&output=csv",
+            
+            Demografi_KPI: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1083999956&single=true&output=csv", 
+            Demografi_Male: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1669718400&single=true&output=csv",
+            Demografi_Female: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1869892191&single=true&output=csv",
+            Demografi_TFR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=2103007265&single=true&output=csv",
+            Demografi_IMR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1236848702&single=true&output=csv",
+            Demografi_Sum: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=777110894&single=true&output=csv",
+            
+            Penduduk_KabKota: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=171382457&single=true&output=csv",
+            Distribusi_Penduduk: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=414429199&single=true&output=csv"
+        };
+
+        let rawData = {};
+        let charts = {};
+
+        function parseCSVNumber(val) {
+            if (val === undefined || val === null) return NaN;
+            let str = val.toString().trim();
+            if (str === "") return NaN;
+            
+            str = str.replace(/["']/g, "");
+
+            if (str.includes('.') && !str.includes(',')) {
+                let parts = str.split('.');
+                if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+                    str = str.replace(/\./g, '');
+                }
+            } else if (str.includes('.') && str.includes(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes(',') && !str.includes('.')) {
+                if (str.split(',').length > 2) {
+                    str = str.replace(/,/g, '');
+                } else {
+                    str = str.replace(',', '.');
+                }
+            }
+            return parseFloat(str);
+        }
+
+        function switchTab(tab) {
+            document.getElementById('statsTab').classList.toggle('hidden', tab !== 'stats');
+            document.getElementById('demografiTab').classList.toggle('hidden', tab !== 'demografi');
+            document.getElementById('linksTab').classList.toggle('hidden', tab !== 'links');
+
+            const activeClass = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white dark:bg-slate-600 shadow-sm text-brand-600 dark:text-white";
+            const inactiveClass = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-600 dark:text-slate-300";
+
+            document.getElementById('btnStatsTab').className = tab === 'stats' ? activeClass : inactiveClass;
+            document.getElementById('btnDemografiTab').className = tab === 'demografi' ? activeClass : inactiveClass;
+            document.getElementById('btnLinkTab').className = tab === 'links' ? activeClass : inactiveClass;
+
+            localStorage.setItem('activeTab', tab);
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function filterLinks() {
+            const query = document.getElementById('searchLinkInput').value.toLowerCase();
+            document.querySelectorAll('.link-card').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(query) ? 'block' : 'none';
+            });
+        }
+
+        function initCharts() {
+            charts.sector = new Chart(document.getElementById('sectorChart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Persentase (%)', data: [], backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+
+            charts.status = new Chart(document.getElementById('statusChart'), {
+                type: 'pie',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+            });
+
+            charts.series = new Chart(document.getElementById('seriesChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            charts.kabKota = new Chart(document.getElementById('kabKotaChart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Nilai (%)', data: [], backgroundColor: [], borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+
+            charts.sheet1 = new Chart(document.getElementById('sheet1Chart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Nilai (%)', data: [], backgroundColor: '#10b981', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+
+            charts.sheet2 = new Chart(document.getElementById('sheet2Chart'), {
+                type: 'pie',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+            });
+
+            charts.sheet3 = new Chart(document.getElementById('sheet3Chart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Nilai', data: [], backgroundColor: '#f59e0b', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            charts.proyeksiSeries = new Chart(document.getElementById('proyeksiSeriesChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Jumlah Penduduk Total', data: [], borderColor: '#2563eb', backgroundColor: '#3b82f622', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            charts.piramida = new Chart(document.getElementById('piramidaChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85+'],
+                    datasets: [
+                        { label: 'Laki-Laki', data: [], backgroundColor: '#3b82f6', borderRadius: 3 },
+                        { label: 'Perempuan', data: [], backgroundColor: '#ec4899', borderRadius: 3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            stacked: false,
+                            ticks: {
+                                callback: function(val) { return Math.abs(val).toLocaleString('id-ID'); }
+                            }
+                        },
+                        y: { 
+                            stacked: true,
+                            reverse: true 
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': ' + Math.abs(ctx.raw).toLocaleString('id-ID') + ' Jiwa';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Grafik Bar: Jumlah Penduduk Kab/Kota
+            charts.pendudukKabKota = new Chart(document.getElementById('pendudukKabKotaChart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Jumlah Penduduk (Jiwa)', data: [], backgroundColor: '#2563eb', borderRadius: 4 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return 'Jumlah: ' + ctx.raw.toLocaleString('id-ID') + ' Jiwa';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                callback: function(val) { return val.toLocaleString('id-ID'); }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Grafik Doughnut: Distribusi Penduduk Kab/Kota
+            charts.pendudukPie = new Chart(document.getElementById('pendudukPieChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
+                            '#ec4899', '#6366f1', '#14b8a6', '#f97316', 
+                            '#06b6d4', '#84cc16', '#a855f7', '#eab308'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    let total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    let val = ctx.raw;
+                                    let percentage = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                    return ctx.label + ': ' + val.toLocaleString('id-ID') + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchAllCSV() {
+            const keys = Object.keys(CSV_URLS);
+            let successCount = 0;
+
+            const promises = keys.map(async (key) => {
+                if (!CSV_URLS[key] || CSV_URLS[key].trim() === "") return;
+                try {
+                    const response = await fetch(CSV_URLS[key]);
+                    if (!response.ok) throw new Error("HTTP " + response.status);
+                    const text = await response.text();
+                    const parsed = Papa.parse(text, { header: false, skipEmptyLines: true });
+                    rawData[key] = parsed.data;
+                    successCount++;
+                } catch (err) {
+                    console.warn(`Gagal memuat URL key: ${key}`, err);
+                }
+            });
+
+            await Promise.all(promises);
+
+            if (successCount > 0) {
+                document.getElementById('syncStatus').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2";
+                document.getElementById('syncText').innerText = "Terhubung & Sinkron";
+                applyFilters();
+                applyDemografiFilters();
+                renderPendudukKabKotaCharts();
+            } else {
+                document.getElementById('syncStatus').className = "inline-block w-2.5 h-2.5 rounded-full bg-red-500 mr-2";
+                document.getElementById('syncText').innerText = "Gagal memuat data";
+            }
+        }
+
+        function getColIndex(year, category, sheetData) {
+            if (!sheetData || sheetData.length < 2) return 5;
+            const row0 = sheetData[0];
+            const row1 = sheetData[1];
+            let currentYear = "";
+            let targetYearColStart = -1;
+
+            for (let col = 1; col < row0.length; col++) {
+                let cellVal = (row0[col] || '').toString().trim();
+                if (cellVal !== "" && !isNaN(parseInt(cellVal))) {
+                    currentYear = cellVal;
+                }
+                if (currentYear === year) {
+                    targetYearColStart = col;
+                    break;
+                }
+            }
+            if (targetYearColStart === -1) targetYearColStart = 1;
+
+            const categoryMap = { 'Perkotaan': 'perkotaan', 'Perdesaan': 'perdesaan', 'Laki-laki': 'laki-laki', 'Perempuan': 'perempuan', 'Total': 'total' };
+            const targetSub = categoryMap[category] || 'total';
+
+            for (let offset = 0; offset < 5; offset++) {
+                let colIdx = targetYearColStart + offset;
+                if (colIdx < row1.length) {
+                    let subVal = (row1[colIdx] || '').toString().trim().toLowerCase();
+                    if (subVal.includes(targetSub)) return colIdx;
+                }
+            }
+            return targetYearColStart + 4;
+        }
+
+        function updateKabKotaOnly() {
+            const selectedYear = document.getElementById('filterYear') ? document.getElementById('filterYear').value : '2025';
+            const selectedCategory = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : 'Total';
+            const kabKotaIndicator = document.getElementById('kabKotaIndicatorFilter') ? document.getElementById('kabKotaIndicatorFilter').value : 'TPT';
+
+            const activeKabSheetKey = kabKotaIndicator === 'TPAK' ? 'KabKota_TPAK' : 'KabKota_TPT';
+            
+            document.getElementById('kabKotaTitle').innerText = `${kabKotaIndicator} Menurut Kab/Kota ${selectedYear}`;
+
+            if (rawData[activeKabSheetKey]) {
+                const cIdx = getColIndex(selectedYear, selectedCategory, rawData[activeKabSheetKey]);
+                let kabDataList = [];
+                for (let r = 2; r < rawData[activeKabSheetKey].length; r++) {
+                    const row = rawData[activeKabSheetKey][r];
+                    if (!row || !row[0]) continue;
+                    const name = row[0].toString().trim();
+                    const val = parseCSVNumber(row[cIdx]);
+                    if (name && !isNaN(val) && !name.toLowerCase().includes('jumlah') && !name.toLowerCase().includes('total')) {
+                        kabDataList.push({ name: name, val: val });
+                    }
+                }
+                kabDataList.sort((a, b) => b.val - a.val);
+                charts.kabKota.data.labels = kabDataList.map(item => item.name);
+                charts.kabKota.data.datasets[0].data = kabDataList.map(item => item.val);
+                charts.kabKota.data.datasets[0].label = `${kabKotaIndicator} (%)`;
+                charts.kabKota.data.datasets[0].backgroundColor = kabDataList.map(item => item.name.toLowerCase().includes('provinsi') ? '#f97316' : '#10b981');
+                charts.kabKota.update();
+            }
+        }
+
+        function applyFilters() {
+            try {
+                if (!rawData.KPI) return;
+                const selectedYear = document.getElementById('filterYear') ? document.getElementById('filterYear').value : '2025';
+                const selectedCategory = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : 'Total';
+                const seriesFilter = document.getElementById('seriesIndicatorFilter') ? document.getElementById('seriesIndicatorFilter').value : 'TPT';
+
+                const colIdx = getColIndex(selectedYear, selectedCategory, rawData.KPI);
+
+                for (let r = 2; r < rawData.KPI.length; r++) {
+                    const row = rawData.KPI[r];
+                    if (!row || !row[0]) continue;
+                    const ind = row[0].toString().trim().toUpperCase();
+                    const rawValStr = row[colIdx] ? row[colIdx].toString().trim() : '';
+                    const val = parseCSVNumber(rawValStr);
+                    
+                    if (!isNaN(val)) {
+                        if (ind === 'TPT') document.getElementById('kpiTPT').innerText = (rawValStr ? rawValStr : val) + '%';
+                        if (ind === 'TPAK') document.getElementById('kpiTPAK').innerText = (rawValStr ? rawValStr : val) + '%';
+                        if (ind.includes('YOUTH') || ind.includes('NEET')) document.getElementById('kpiNEET').innerText = (rawValStr ? rawValStr : val) + '%';
+                        if (ind.includes('PUK') || ind.includes('PENDUDUK USIA KERJA')) {
+                            document.getElementById('kpiPUK').innerText = val.toLocaleString('id-ID') + ' Jiwa';
+                        }
+                    }
+                }
+
+                if (rawData.Sektor_17) {
+                    const cIdx = getColIndex(selectedYear, selectedCategory, rawData.Sektor_17);
+                    let sectorDataList = [];
+                    for (let r = 2; r < rawData.Sektor_17.length; r++) {
+                        const row = rawData.Sektor_17[r];
+                        if (!row || !row[0]) continue;
+                        const name = row[0].toString().trim();
+                        const val = parseCSVNumber(row[cIdx]);
+                        if (name && !isNaN(val) && !name.toLowerCase().includes('jumlah') && !name.toLowerCase().includes('total')) {
+                            sectorDataList.push({ name: name, val: val });
+                        }
+                    }
+                    sectorDataList.sort((a, b) => b.val - a.val);
+                    charts.sector.data.labels = sectorDataList.map(item => item.name);
+                    charts.sector.data.datasets[0].data = sectorDataList.map(item => item.val);
+                    charts.sector.update();
+                }
+
+                if (rawData.Status_17) {
+                    const sheet = rawData.Status_17;
+                    if (sheet.length > 0 && sheet[0][0]) document.getElementById('titleStatusCard').innerText = sheet[0][0];
+                    const cIdx = getColIndex(selectedYear, selectedCategory, sheet);
+                    const statusLabels = [];
+                    const statusValues = [];
+                    for (let r = 2; r < sheet.length; r++) {
+                        const row = sheet[r];
+                        if (!row || !row[0]) continue;
+                        const name = row[0].toString().trim();
+                        const val = parseCSVNumber(row[cIdx]);
+                        if (name && !isNaN(val) && !name.toLowerCase().includes('jumlah') && !name.toLowerCase().includes('total')) {
+                            statusLabels.push(name);
+                            statusValues.push(val);
+                        }
+                    }
+                    charts.status.data.labels = statusLabels;
+                    charts.status.data.datasets[0].data = statusValues;
+                    charts.status.update();
+                }
+
+                if (rawData.Serie_10Thn) {
+                    const years = [];
+                    const row0 = rawData.Serie_10Thn[0];
+                    let lastYr = "";
+                    for (let c = 1; c < row0.length; c++) {
+                        let cell = (row0[c] || '').toString().trim();
+                        if (cell !== "" && !isNaN(parseInt(cell)) && cell !== lastYr) {
+                            years.push(cell);
+                            lastYr = cell;
+                        }
+                    }
+                    const seriesData = [];
+                    years.forEach(yr => {
+                        const cIdx = getColIndex(yr, selectedCategory, rawData.Serie_10Thn);
+                        let foundVal = null;
+                        for (let r = 2; r < rawData.Serie_10Thn.length; r++) {
+                            const row = rawData.Serie_10Thn[r];
+                            if (!row || !row[0]) continue;
+                            const ind = row[0].toString().trim().toUpperCase();
+                            const val = parseCSVNumber(row[cIdx]);
+                            if (ind === seriesFilter && !isNaN(val)) foundVal = val;
+                        }
+                        seriesData.push(foundVal);
+                    });
+
+                    // PERBAIKAN: Menyesuaikan judul grafik dengan Indikator & Range Tahun
+                    if (years.length > 0) {
+                        const startYear = years[0];
+                        const endYear = years[years.length - 1];
+                        document.getElementById('seriesTitle').innerText = `Perkembangan Indikator ${seriesFilter} (${startYear}-${endYear})`;
+                    } else {
+                        document.getElementById('seriesTitle').innerText = `Perkembangan Indikator ${seriesFilter}`;
+                    }
+
+                    charts.series.data.labels = years;
+                    charts.series.data.datasets = [{
+                        label: seriesFilter === 'TPT' ? 'TPT (%)' : 'TPAK (%)',
+                        data: seriesData,
+                        borderColor: seriesFilter === 'TPT' ? '#ef4444' : '#3b82f6',
+                        backgroundColor: seriesFilter === 'TPT' ? '#ef444422' : '#3b82f622',
+                        tension: 0.3,
+                        fill: true
+                    }];
+                    charts.series.update();
+                }
+
+                updateKabKotaOnly();
+
+                function renderSheetBaru(sheetKey, chartObj, titleElementId) {
+                    if (!rawData[sheetKey]) return;
+                    const sheet = rawData[sheetKey];
+                    if (sheet.length > 0 && sheet[0][0]) document.getElementById(titleElementId).innerText = sheet[0][0];
+                    const cIdx = getColIndex(selectedYear, selectedCategory, sheet);
+                    let dataList = [];
+                    for (let r = 2; r < sheet.length; r++) {
+                        const row = sheet[r];
+                        if (!row || !row[0]) continue;
+                        const name = row[0].toString().trim();
+                        const val = parseCSVNumber(row[cIdx]);
+                        if (name && !isNaN(val) && !name.toLowerCase().includes('jumlah') && !name.toLowerCase().includes('total')) {
+                            dataList.push({ name: name, val: val });
+                        }
+                    }
+                    dataList.sort((a, b) => b.val - a.val);
+                    chartObj.data.labels = dataList.map(item => item.name);
+                    chartObj.data.datasets[0].data = dataList.map(item => item.val);
+                    chartObj.update();
+                }
+
+                renderSheetBaru('SheetBaru1', charts.sheet1, 'titleSheet1');
+                renderSheetBaru('SheetBaru2', charts.sheet2, 'titleSheet2');
+                renderSheetBaru('SheetBaru3', charts.sheet3, 'titleSheet3');
+
+            } catch (err) {
+                console.error("Error pada applyFilters:", err);
+            }
+        }
+
+        function parseSheetToDataList(sheet, selectedYear) {
+            if (!sheet || sheet.length < 2) return [];
+
+            let yearColIdx = -1;
+            const headerRow = sheet[0];
+            for (let c = 1; c < headerRow.length; c++) {
+                let cellVal = (headerRow[c] || '').toString().trim();
+                if (cellVal === selectedYear) {
+                    yearColIdx = c;
+                    break;
+                }
+            }
+
+            if (yearColIdx === -1 && sheet.length > 1) {
+                const subHeaderRow = sheet[1];
+                for (let c = 1; c < subHeaderRow.length; c++) {
+                    let cellVal = (subHeaderRow[c] || '').toString().trim();
+                    if (cellVal === selectedYear) {
+                        yearColIdx = c;
+                        break;
+                    }
+                }
+            }
+
+            if (yearColIdx === -1) yearColIdx = 1;
+
+            let list = [];
+            for (let r = 1; r < sheet.length; r++) {
+                const row = sheet[r];
+                if (!row || !row[0]) continue;
+                const namaWilayah = row[0].toString().trim();
+                let val = parseCSVNumber(row[yearColIdx]);
+
+                if (namaWilayah && !isNaN(val) && !namaWilayah.toLowerCase().includes('provinsi') && !namaWilayah.toLowerCase().includes('jumlah total')) {
+                    list.push({ name: namaWilayah, val: val });
+                }
+            }
+            list.sort((a, b) => b.val - a.val);
+            return list;
+        }
+
+        function renderPendudukKabKotaCharts() {
+            const selYear = document.getElementById('filterDemografiYear') ? document.getElementById('filterDemografiYear').value : '2025';
+
+            if (rawData.Penduduk_KabKota) {
+                const sheet = rawData.Penduduk_KabKota;
+                if (sheet.length > 0 && sheet[0][0]) {
+                    document.getElementById('titlePendudukKabKota').innerText = "Jumlah Penduduk " + sheet[0][0] + " (" + selYear + ")";
+                }
+                const pendudukList = parseSheetToDataList(sheet, selYear);
+                charts.pendudukKabKota.data.labels = pendudukList.map(item => item.name);
+                charts.pendudukKabKota.data.datasets[0].data = pendudukList.map(item => item.val);
+                charts.pendudukKabKota.update();
+            }
+
+            if (rawData.Distribusi_Penduduk) {
+                const sheetDist = rawData.Distribusi_Penduduk;
+                if (sheetDist.length > 0 && sheetDist[0][0]) {
+                    document.getElementById('titlePendudukPie').innerText = "Distribusi Penduduk " + sheetDist[0][0] + " (" + selYear + ")";
+                }
+                const distribusiList = parseSheetToDataList(sheetDist, selYear);
+                charts.pendudukPie.data.labels = distribusiList.map(item => item.name);
+                charts.pendudukPie.data.datasets[0].data = distribusiList.map(item => item.val);
+                charts.pendudukPie.update();
+            }
+        }
+
+        function applyDemografiFilters() {
+            try {
+                if (!rawData.Demografi_KPI) return;
+                const selYear = document.getElementById('filterDemografiYear').value;
+
+                const sheetKPI = rawData.Demografi_KPI;
+                if (sheetKPI.length < 2) return;
+
+                let yearsList = [];
+                let jumlahList = [];
+                let selJumlah = "-- Jiwa", selSR = "--", selDR = "--", selLansia60 = "-- %";
+                let selTFR = "--", selIMR = "--", selLPP = "-- %", selUHH = "-- Thn";
+
+                for (let r = 1; r < sheetKPI.length; r++) {
+                    const row = sheetKPI[r];
+                    if (!row || !row[0]) continue;
+                    
+                    const yr = row[0].toString().trim();
+                    const jml = parseCSVNumber(row[1]);       
+                    const dr_str  = row[6] ? row[6].toString().trim() : '';
+                    const dr      = parseCSVNumber(dr_str);       
+                    const lansia_str = row[8] ? row[8].toString().trim() : '';
+                    const lansia60   = parseCSVNumber(lansia_str);  
+                    const sr_str  = row[9] ? row[9].toString().trim() : '';
+                    const sr      = parseCSVNumber(sr_str);       
+                    const tfr_str = row[10] ? row[10].toString().trim() : '';
+                    const tfr     = parseCSVNumber(tfr_str);      
+                    const imr_str = row[11] ? row[11].toString().trim() : '';
+                    const imr     = parseCSVNumber(imr_str);      
+                    const lpp_str = row[12] ? row[12].toString().trim() : '';
+                    const lpp     = parseCSVNumber(lpp_str);      
+                    const uhh_str = row[13] ? row[13].toString().trim() : '';
+                    const uhh     = parseCSVNumber(uhh_str);      
+
+                    if (yr && !isNaN(jml)) {
+                        yearsList.push(yr);
+                        jumlahList.push(jml);
+                        
+                        if (yr === selYear) {
+                            selJumlah = !isNaN(jml) ? jml.toLocaleString('id-ID') + ' Jiwa' : "-- Jiwa";
+                            selSR = sr_str !== '' && !isNaN(sr) ? sr_str : "--";
+                            selDR = dr_str !== '' && !isNaN(dr) ? dr_str : "--";
+                            selLansia60 = lansia_str !== '' && !isNaN(lansia60) ? lansia_str + '%' : "-- %";
+                            selTFR = tfr_str !== '' && !isNaN(tfr) ? tfr_str : "--";
+                            selIMR = imr_str !== '' && !isNaN(imr) ? imr_str : "--";
+                            selLPP = lpp_str !== '' && !isNaN(lpp) ? lpp_str + '%' : "-- %";
+                            selUHH = uhh_str !== '' && !isNaN(uhh) ? uhh_str + ' Thn' : "-- Thn";
+                        }
+                    }
+                }
+
+                document.getElementById('kpiJumlahDuk').innerText = selJumlah;
+                document.getElementById('kpiSR').innerText = selSR;
+                document.getElementById('kpiDR').innerText = selDR;
+                document.getElementById('kpiLansia60').innerText = selLansia60;
+                document.getElementById('kpiTFR').innerText = selTFR;
+                document.getElementById('kpiIMR').innerText = selIMR;
+                document.getElementById('kpiLPP').innerText = selLPP;
+                document.getElementById('kpiUHH').innerText = selUHH;
+
+                charts.proyeksiSeries.data.labels = yearsList;
+                charts.proyeksiSeries.data.datasets[0].data = jumlahList;
+                charts.proyeksiSeries.update();
+
+                if (rawData.Demografi_Male && rawData.Demografi_Female) {
+                    const sheetM = rawData.Demografi_Male;
+                    const sheetF = rawData.Demografi_Female;
+
+                    let mRow = sheetM.find(r => r[0] && r[0].toString().trim() === selYear);
+                    let fRow = sheetF.find(r => r[0] && r[0].toString().trim() === selYear);
+
+                    if (mRow && fRow) {
+                        let maleVals = [];
+                        let femaleVals = [];
+                        
+                        const totalCols = mRow.length;
+                        const startCol = totalCols - 21;
+
+                        for (let i = 0; i < 17; i++) {
+                            let col = startCol + i;
+                            maleVals.push(-parseCSVNumber(mRow[col]) || 0);
+                            femaleVals.push(parseCSVNumber(fRow[col]) || 0);
+                        }
+
+                        let sumM_85plus = 0;
+                        let sumF_85plus = 0;
+                        for (let i = 17; i < 21; i++) {
+                            let col = startCol + i;
+                            if(col < totalCols) {
+                                sumM_85plus += parseCSVNumber(mRow[col]) || 0;
+                                sumF_85plus += parseCSVNumber(fRow[col]) || 0;
+                            }
+                        }
+
+                        maleVals.push(-sumM_85plus);
+                        femaleVals.push(sumF_85plus);
+
+                        charts.piramida.data.datasets[0].data = maleVals;
+                        charts.piramida.data.datasets[1].data = femaleVals;
+                        charts.piramida.update();
+                    }
+                }
+
+                renderPendudukKabKotaCharts();
+
+            } catch (err) {
+                console.error("Error pada applyDemografiFilters:", err);
+            }
+        }
+
+        window.onload = function() {
+            initCharts();
+            const savedTab = localStorage.getItem('activeTab') || 'stats';
+            switchTab(savedTab);
+            fetchAllCSV();
+        };
+    </script>
+</body>
+</html>
