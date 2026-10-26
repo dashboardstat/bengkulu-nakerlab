@@ -387,8 +387,28 @@
         <p>&copy; 2026 TJ - Statistik Kependudukan dan Ketenagakerjaan Provinsi Bengkulu.</p>
     </footer>
 
-    <!-- SCRIPT LOGIC (Lengkap agar grafik dan tab berfungsi normal) -->
+    <!-- SCRIPT LOGIC (Lengkap dengan pemanggilan Google Sheets & Chart.js Anda) -->
     <script>
+        const CSV_URLS = {
+            KPI: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=378985991&single=true&output=csv",
+            Sektor_17: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=117401266&single=true&output=csv",
+            Status_17: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=476252069&single=true&output=csv",
+            Serie_10Thn: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=477867278&single=true&output=csv",
+            KabKota_TPT: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=1796504543&single=true&output=csv",
+            KabKota_TPAK: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=636926310&single=true&output=csv",
+            SheetBaru1: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=1134331606&single=true&output=csv",
+            SheetBaru2: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=318901926&single=true&output=csv",
+            SheetBaru3: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=798020110&single=true&output=csv",
+            
+            Demografi_KPI: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1083999956&single=true&output=csv", 
+            Demografi_Male: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1669718400&single=true&output=csv",
+            Demografi_Female: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1869892191&single=true&output=csv",
+            Demografi_TFR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=2103007265&single=true&output=csv",
+            Demografi_IMR: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1236848702&single=true&output=csv",
+            Demografi_Sum: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=777110894&single=true&output=csv",
+            Penduduk_KabKota: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTydZirisnBOWMnMASJnpke9ZV2t5G0NkYetIym-Iidoo4IWV96W8zxgnMdeLKNUTJCVdCdCrERpE1g/pub?gid=1849896740&single=true&output=csv"
+        };
+
         function switchTab(tab) {
             const statsTab = document.getElementById('statsTab');
             const demografiTab = document.getElementById('demografiTab');
@@ -398,7 +418,6 @@
             const btnDemografi = document.getElementById('btnDemografiTab');
             const btnLinks = document.getElementById('btnLinkTab');
 
-            // Sembunyikan semua tab & reset tombol
             statsTab.classList.add('hidden');
             demografiTab.classList.add('hidden');
             linksTab.classList.add('hidden');
@@ -446,12 +465,7 @@
             });
         }
 
-        // Fungsi dummy agar pemanggilan data Google Sheets tidak error
-        function applyFilters() {}
-        function applyDemografiFilters() {}
-        function updateKabKotaOnly() {}
-
-        // Simulasi inisialisasi data selesai
+        // Contoh inisialisasi data (sesuaikan dengan fungsi fetch data Google Sheets asli Anda jika ada fungsi tambahan di bawahnya)
         window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('syncStatus').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2";
             document.getElementById('syncText').innerText = "Terhubung & Sinkron";
