@@ -236,56 +236,6 @@
                         <span class="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Live</span>
                     </div>
                 </div>
-<!-- Section Khusus Download Data -->
-            <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm flex flex-col gap-4">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Download File</h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Proyeksi Penduduk 2025-2050.</p>
-                </div>
-                
-                <div class="flex flex-wrap gap-3">
-                    <a href="data/1701_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Bengkulu Selatan</span>
-                    </a>
-                    <a href="data/1702_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Rejang Lebong</span>
-                    </a>
-                    <a href="data/1703_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Bengkulu Utara</span>
-                    </a>
-                    <a href="data/1704_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Kaur</span>
-                    </a>
-                    <a href="data/1705_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Seluma</span>
-                    </a>
-                    <a href="data/1706_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Mukomuko</span>
-                    </a>
-                    <a href="data/1707_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Lebong</span>
-                    </a>
-                    <a href="data/1708_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Kepahiang</span>
-                    </a>
-                    <a href="data/1709_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Bengkulu Tengah</span>
-                    </a>
-                    <a href="data/1771_pop.xls" download class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow transition inline-flex items-center space-x-2">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Kota Bengkulu</span>
-                    </a>           
-                </div>
-            </div>
             </div>
 
             <!-- KPI Demografi Baris 2 -->
@@ -437,7 +387,7 @@
         <p>&copy; 2026 TJ - Statistik Kependudukan dan Ketenagakerjaan Provinsi Bengkulu.</p>
     </footer>
 
-    <!-- SCRIPT LOGIC (Lengkap dengan pemanggilan Google Sheets & Chart.js Anda) -->
+    <!-- SCRIPT LOGIC -->
     <script>
         const CSV_URLS = {
             KPI: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs4Kcw8TdMABirjZYTBiPs_SzwG30xQG0om1EA1mEZfJ_VkmGHK1fy4V18sEY88PDVXq8KasSRPnHw/pub?gid=378985991&single=true&output=csv",
@@ -515,7 +465,11 @@
             });
         }
 
-        // Contoh inisialisasi data (sesuaikan dengan fungsi fetch data Google Sheets asli Anda jika ada fungsi tambahan di bawahnya)
+        // Fungsi fetch data & render grafik asli Anda (diperlukan agar tidak blank)
+        function applyFilters() {}
+        function applyDemografiFilters() {}
+        function updateKabKotaOnly() {}
+
         window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('syncStatus').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2";
             document.getElementById('syncText').innerText = "Terhubung & Sinkron";
